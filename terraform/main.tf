@@ -217,3 +217,136 @@ resource "aws_lambda_permission" "api_gw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
 }
+
+# === MONITORING & ALARMS ===
+
+# SNS Topic for Alarms (optional - configure email subscription manually)
+resource "aws_sns_topic" "alarm_topic" {
+  count = var.enable_alarms ? 1 : 0
+  name  = "llm-scores-alarms"
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}
+
+# Alarm: Lambda Errors
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  count               = var.enable_alarms ? 1 : 0
+  alarm_name          = "llm-scores-lambda-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "5"
+  alarm_description   = "Lambda function is experiencing errors"
+  alarm_actions       = [aws_sns_topic.alarm_topic[0].arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.llm_service.function_name
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}
+
+# Alarm: Lambda Duration (Performance)
+resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
+  count               = var.enable_alarms ? 1 : 0
+  alarm_name          = "llm-scores-lambda-duration"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "3000"  # 3 seconds
+  alarm_description   = "Lambda function duration is too high"
+  alarm_actions       = [aws_sns_topic.alarm_topic[0].arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.llm_service.function_name
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}
+
+# Alarm: Lambda Throttles
+resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
+  count               = var.enable_alarms ? 1 : 0
+  alarm_name          = "llm-scores-lambda-throttles"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Throttles"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "Lambda function is being throttled"
+  alarm_actions       = [aws_sns_topic.alarm_topic[0].arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.llm_service.function_name
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}
+
+# Alarm: API Gateway 5XX Errors
+resource "aws_cloudwatch_metric_alarm" "api_5xx_errors" {
+  count               = var.enable_alarms ? 1 : 0
+  alarm_name          = "llm-scores-api-5xx-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "5XXError"
+  namespace           = "AWS/ApiGateway"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "API Gateway is returning 5XX errors"
+  alarm_actions       = [aws_sns_topic.alarm_topic[0].arn]
+
+  dimensions = {
+    ApiId = aws_apigatewayv2_api.http_api.id
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}
+
+# Alarm: API Gateway Latency
+resource "aws_cloudwatch_metric_alarm" "api_latency" {
+  count               = var.enable_alarms ? 1 : 0
+  alarm_name          = "llm-scores-api-latency"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Latency"
+  namespace           = "AWS/ApiGateway"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "2000"  # 2 seconds
+  alarm_description   = "API Gateway latency is too high"
+  alarm_actions       = [aws_sns_topic.alarm_topic[0].arn]
+
+  dimensions = {
+    ApiId = aws_apigatewayv2_api.http_api.id
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "llm-scores"
+  }
+}

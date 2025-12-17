@@ -61,3 +61,17 @@ variable "cors_allowed_origins" {
   type        = list(string)
   default     = ["*"]  # Restrict this in production
 }
+
+# === Monitoring & Logging ===
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days"
+  type        = number
+  default     = 7
+}
+
+variable "enable_alarms" {
+  description = "Enable CloudWatch alarms"
+  type        = bool
+  default     = true
+}
