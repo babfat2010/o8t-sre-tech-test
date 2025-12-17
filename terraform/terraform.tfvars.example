@@ -1,0 +1,35 @@
+# Example Terraform Variables Configuration
+# Copy this file to terraform.tfvars and adjust values for your environment
+
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Lambda Configuration
+lambda_memory_size             = 512
+lambda_reserved_concurrency    = 100
+enable_provisioned_concurrency = false  # Set to true for production (reduces cold starts but increases costs)
+provisioned_concurrency_count  = 2      # Number of warm instances to keep ready
+cache_ttl_seconds              = 300    # 5 minutes - adjust based on data freshness requirements
+
+# API Gateway Configuration
+api_throttle_burst_limit = 5000  # Maximum concurrent requests
+api_throttle_rate_limit  = 2000  # Requests per second
+cors_allowed_origins     = ["*"] # Restrict to specific domains in production
+
+# Monitoring & Logging
+log_retention_days = 7    # Increase for production (30, 60, or 90 days)
+enable_alarms      = true # Enable CloudWatch alarms for monitoring
+
+# Production Settings Recommendation:
+# ----------------------------------
+# environment                    = "prod"
+# lambda_memory_size             = 1024
+# lambda_reserved_concurrency    = 1000
+# enable_provisioned_concurrency = true
+# provisioned_concurrency_count  = 5
+# cache_ttl_seconds              = 300
+# api_throttle_burst_limit       = 10000
+# api_throttle_rate_limit        = 5000
+# log_retention_days             = 30
+# enable_alarms                  = true
